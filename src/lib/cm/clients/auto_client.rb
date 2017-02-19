@@ -13,6 +13,11 @@ module Yast
     class AutoClient < ::Installation::AutoClient
       include Yast::I18n
 
+      # zypp lock file
+      ZYPP_PID = Pathname("/var/run/zypp.pid")
+      # zypp lock backup file
+      ZYPP_PID_BACKUP = ZYPP_PID.sub_ext(".sav")
+
       # Constructor
       def initialize
         Yast.import "Popup"
@@ -53,9 +58,11 @@ module Yast
       # @see Provisioner#current
       def write
         dialog = Yast::CM::Dialogs::Running.new
-        dialog.run do |stdout, stderr|
-          # Connect stdout and stderr with the dialog
-          Provisioner.current.run(stdout, stderr)
+        without_zypp_lock do
+          dialog.run do |stdout, stderr|
+            # Connect stdout and stderr with the dialog
+            Provisioner.current.run(stdout, stderr)
+          end
         end
         true
       end
@@ -87,6 +94,18 @@ module Yast
       # @return [{}] Returns an empty Hash
       def export
         {}
+      end
+
+    private
+
+      # Run a block without the zypp lock
+      #
+      # @param [Proc] Block to run
+      def without_zypp_lock(&block)
+        ::FileUtils.mv(ZYPP_PID, ZYPP_PID_BACKUP) if ZYPP_PID.exist?
+        block.call
+      ensure
+        ::FileUtils.mv(ZYPP_PID_BACKUP, ZYPP_PID) if ZYPP_PID_BACKUP.exist?
       end
     end
   end
