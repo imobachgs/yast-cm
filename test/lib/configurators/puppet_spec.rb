@@ -28,8 +28,25 @@ describe Yast::CM::Configurators::Puppet do
   end
 
   describe "#packages" do
-    it "returns a hash containing only the 'puppet' package" do
-      expect(configurator.packages).to eq("install" => ["puppet"])
+    context "when some package provides 'puppet'" do
+      before do
+        allow(Yast::Pkg).to receive(:PkgQueryProvides)
+          .and_return([["ruby2.2-rubygem-puppet", :CAND, :NONE]])
+      end
+
+      it "returns a hash containing that package" do
+        expect(configurator.packages).to eq("install" => ["ruby2.2-rubygem-puppet"])
+      end
+    end
+
+    context "when no package provides 'puppet'" do
+      before do
+        allow(Yast::Pkg).to receive(:PkgQueryProvides).and_return([])
+      end
+
+      it "returns an empty hash" do
+        expect(configurator.packages).to eq({})
+      end
     end
   end
 

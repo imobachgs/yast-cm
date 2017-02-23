@@ -4,6 +4,8 @@ require "cm/cfa/puppet"
 require "cm/configurators/base"
 require "pathname"
 
+Yast.import "Pkg"
+
 module Yast
   module CM
     module Configurators
@@ -30,7 +32,10 @@ module Yast
         #
         # @return [Hash] Packages to install/remove
         def packages
-          { "install" => ["puppet"] }
+          packages = Pkg.PkgQueryProvides("puppet")
+          require "byebug"
+          return {} if packages.empty?
+          { "install" => [packages[0][0]] }
         end
 
       private
