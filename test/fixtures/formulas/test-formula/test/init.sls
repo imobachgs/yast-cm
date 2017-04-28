@@ -1,2 +1,0 @@
-test.ping:
-  module.run
